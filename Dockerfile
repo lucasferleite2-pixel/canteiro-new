@@ -6,4 +6,4 @@ COPY . .
 RUN npm run build
 RUN npm install -g serve
 EXPOSE 3000
-CMD serve dist -s --listen tcp://0.0.0.0:$PORT
+CMD sh -c "serve dist -s -l ${PORT:-3000}"
