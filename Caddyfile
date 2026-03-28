@@ -1,3 +1,4 @@
+# Caddy config for Railway — SPA with gzip, dynamic $PORT
 {
     admin off
     persist_config off
