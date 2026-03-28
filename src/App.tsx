@@ -32,6 +32,7 @@ import CrmVendas from "@/pages/CrmVendas";
 import PortalCliente from "@/pages/PortalCliente";
 import PortalClientePublico from "@/pages/PortalClientePublico";
 import Relatorios from "@/pages/Relatorios";
+import ImportarDados from "@/pages/ImportarDados";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="/crm" element={<CrmVendas />} />
               <Route path="/portal-config" element={<PortalCliente />} />
               <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/importar-dados" element={<ImportarDados />} />
             </Route>
             <Route path="/verificar/:documentId" element={<VerificarDocumento />} />
             <Route path="*" element={<NotFound />} />
