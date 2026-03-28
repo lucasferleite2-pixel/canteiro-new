@@ -60,7 +60,7 @@ export function DashboardProjectsTable({ projects }: { projects: ProjectRow[] })
                   const st = statusConfig[p.status] || statusConfig.planning;
                   const risk = riskBadge[p.risk_score] || riskBadge.baixo;
                   return (
-                    <tr key={p.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-primary/5 transition-colors" style={{ borderBottomColor: "rgba(0,0,0,0.06)" }}>
                       <td className="py-2.5 px-2 font-medium max-w-[180px] truncate">{p.name}</td>
                       <td className="py-2.5 px-2">
                         <Badge variant={st.variant} className="text-xs">{st.label}</Badge>

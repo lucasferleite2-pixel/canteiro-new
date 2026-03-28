@@ -33,7 +33,7 @@ export function DashboardKpiCards({ data }: { data: KpiData }) {
         <Card key={c.label} className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
             <CardTitle className="text-xs font-medium text-muted-foreground">{c.label}</CardTitle>
-            <div className={`rounded-md p-1.5 ${c.bg}`}>
+            <div className={`rounded-xl p-1.5 ${c.bg}`}>
               <c.icon className={`h-4 w-4 ${c.color}`} />
             </div>
           </CardHeader>

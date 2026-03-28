@@ -52,7 +52,7 @@ export function DashboardFinancialChart({ data }: { data: FinancialByProject[] }
                 width={70}
               />
               <Tooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                contentStyle={{ fontSize: 12, borderRadius: 12, background: "rgba(255,255,255,0.88)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}
                 formatter={(v: number, name: string) => [formatCurrency(v), name === "receita" ? "Receita" : "Despesa"]}
               />
               <Legend

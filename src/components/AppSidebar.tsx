@@ -114,11 +114,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <div className="flex items-center gap-2">
-          <HardHat className="h-7 w-7 text-primary" />
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4" style={{ borderBottomColor: "rgba(255,255,255,0.4)" }}>
+        <div className="flex items-center gap-2.5">
+          <div className="rounded-xl bg-primary/10 p-1.5">
+            <HardHat className="h-6 w-6 text-primary" />
+          </div>
           <div>
-            <h1 className="text-sm font-bold tracking-tight text-sidebar-foreground">
+            <h1 className="text-sm font-semibold tracking-tight text-sidebar-foreground">
               ERP Obra Inteligente
             </h1>
             <p className="text-[10px] text-muted-foreground">
@@ -134,14 +136,19 @@ export function AppSidebar() {
         {renderGroup("Vendas e Clientes", salesItems)}
         {renderGroup("Sistema", systemItems)}
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-3">
-        <div className="text-center">
-          <p className="text-xs font-medium text-sidebar-foreground truncate">
-            {profile?.full_name || "Usuário"}
-          </p>
-          <p className="text-[10px] text-muted-foreground truncate">
-            {profile?.email || ""}
-          </p>
+      <SidebarFooter className="border-t border-sidebar-border p-3" style={{ borderTopColor: "rgba(255,255,255,0.4)" }}>
+        <div className="flex items-center gap-2.5 px-1">
+          <div className="rounded-full bg-primary/10 p-1.5 shrink-0">
+            <Users className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-sidebar-foreground truncate">
+              {profile?.full_name || "Usuário"}
+            </p>
+            <p className="text-[10px] text-muted-foreground truncate">
+              {profile?.email || ""}
+            </p>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>

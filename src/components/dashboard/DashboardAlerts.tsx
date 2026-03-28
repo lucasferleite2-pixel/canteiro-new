@@ -46,8 +46,8 @@ export function DashboardAlerts({ alerts }: { alerts: AlertItem[] }) {
               const sev = severityConfig[alert.severity] || severityConfig.info;
               const Icon = sev.icon;
               return (
-                <div key={alert.id} className="flex items-start gap-3 p-2.5 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-                  <div className={`rounded-md p-1.5 mt-0.5 shrink-0 ${sev.bg}`}>
+                <div key={alert.id} className="flex items-start gap-3 p-2.5 rounded-xl border bg-muted/30 hover:bg-muted/50 transition-colors" style={{ borderColor: "rgba(255,255,255,0.5)" }}>
+                  <div className={`rounded-xl p-1.5 mt-0.5 shrink-0 ${sev.bg}`}>
                     <Icon className={`h-3.5 w-3.5 ${sev.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">
