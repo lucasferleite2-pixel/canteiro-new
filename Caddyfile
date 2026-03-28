@@ -11,7 +11,7 @@
     }
 }
 
-:{$PORT:3000} {
+:{$PORT} {
     log {
         format json
     }
@@ -20,4 +20,3 @@
     try_files {path} /index.html
     file_server
 }
-
