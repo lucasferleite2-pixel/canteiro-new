@@ -194,11 +194,12 @@ export async function importData(
 
   // ── Step 1: Update current company metadata ──────────────────────────────
   if (payload.company) {
-    const companyData = { ...payload.company };
-    // Remove fields that must not change
-    delete companyData.id;
-    delete companyData.owner_id;
-    delete companyData.created_at;
+    // Keep only columns that exist in the current schema
+    const COMPANY_ALLOWED = ["name", "cnpj"] as const;
+    const companyData: Record<string, unknown> = {};
+    for (const key of COMPANY_ALLOWED) {
+      if (key in payload.company) companyData[key] = payload.company[key];
+    }
 
     const { error } = await supabase
       .from("companies")
@@ -233,31 +234,50 @@ export async function importData(
   const contracts = normalizeRecords(payload.contracts ?? [], companyId, userId);
   results.push(await importTable("contracts", "Contratos", contracts, onProgress));
 
-  // ── Step 5: Financial records ────────────────────────────────────────────
-  const financialRecords = normalizeRecords(payload.financial_records ?? [], companyId, userId);
-  results.push(await importTable("financial_records", "Registros Financeiros", financialRecords, onProgress));
-
-  // ── Step 6: Bids ─────────────────────────────────────────────────────────
+  // ── Step 5: Bids ─────────────────────────────────────────────────────────
   const bids = normalizeRecords(payload.bids ?? [], companyId, userId);
   results.push(await importTable("bids", "Licitações", bids, onProgress));
 
-  // ── Step 7: Alerts ───────────────────────────────────────────────────────
+  // ── Step 6: Alerts ───────────────────────────────────────────────────────
   const alerts = normalizeRecords(payload.alerts ?? [], companyId, userId, ["user_id"]);
   results.push(await importTable("alerts", "Alertas", alerts, onProgress));
 
-  // ── Step 8: RDO Dia ──────────────────────────────────────────────────────
+  // ── Step 7: RDO Dia ──────────────────────────────────────────────────────
   const rdoDia = normalizeRecords(payload.rdo_dia ?? [], companyId, userId, ["criado_por"]);
   results.push(await importTable("rdo_dia", "RDO — Dias", rdoDia, onProgress));
 
-  // ── Step 9: RDO sub-tables (parallel) ───────────────────────────────────
-  const rdoAtividade = normalizeRecords(payload.rdo_atividade ?? [], companyId, userId);
-  const rdoMaterial = normalizeRecords(payload.rdo_material ?? [], companyId, userId);
+  // ── Step 8: rdo_despesa_item — must come before financial_records ─────────
+  // Strip 'valor_total': it is a GENERATED ALWAYS column and cannot be inserted.
   const rdoDespesaItem = normalizeRecords(
-    payload.rdo_despesa_item ?? [],
+    (payload.rdo_despesa_item ?? []).map(({ valor_total: _vt, ...rest }) => rest),
     companyId,
     userId,
     ["created_by"]
   );
+  results.push(await importTable("rdo_despesa_item", "RDO — Despesas", rdoDespesaItem, onProgress));
+
+  // ── Step 9: Financial records (after rdo_despesa_item) ───────────────────
+  // Collect successfully imported rdo_despesa_item IDs to avoid FK violations.
+  const importedDespesaIds = new Set(
+    rdoDespesaItem.map((r) => r.id as string)
+  );
+  const financialRecords = normalizeRecords(
+    (payload.financial_records ?? []).map((r) => ({
+      ...r,
+      // Null out the FK if the referenced despesa wasn't imported
+      rdo_despesa_item_id:
+        r.rdo_despesa_item_id && importedDespesaIds.has(r.rdo_despesa_item_id as string)
+          ? r.rdo_despesa_item_id
+          : null,
+    })),
+    companyId,
+    userId
+  );
+  results.push(await importTable("financial_records", "Registros Financeiros", financialRecords, onProgress));
+
+  // ── Step 10: Remaining RDO sub-tables (parallel) ─────────────────────────
+  const rdoAtividade = normalizeRecords(payload.rdo_atividade ?? [], companyId, userId);
+  const rdoMaterial = normalizeRecords(payload.rdo_material ?? [], companyId, userId);
   const rdoOcorrencia = normalizeRecords(payload.rdo_ocorrencia ?? [], companyId, userId);
   // rdo_foto: import metadata/URLs only — strip any raw binary "data" field
   const rdoFoto = normalizeRecords(
@@ -273,7 +293,6 @@ export async function importData(
   const parallelResults = await Promise.all([
     importTable("rdo_atividade", "RDO — Atividades", rdoAtividade, onProgress),
     importTable("rdo_material", "RDO — Materiais", rdoMaterial, onProgress),
-    importTable("rdo_despesa_item", "RDO — Despesas", rdoDespesaItem, onProgress),
     importTable("rdo_ocorrencia", "RDO — Ocorrências", rdoOcorrencia, onProgress),
     importTable("rdo_foto", "RDO — Fotos (metadados)", rdoFoto, onProgress),
   ]);
