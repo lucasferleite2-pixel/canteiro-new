@@ -1,9 +1,17 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 WORKDIR /app
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PROJECT_ID
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
-RUN npm install -g serve
-EXPOSE 3000
-CMD sh -c "serve dist -s -l ${PORT:-3000}"
+
+FROM caddy:2-alpine
+COPY --from=builder /app/dist /srv
+COPY Caddyfile /etc/caddy/Caddyfile
+EXPOSE 80
