@@ -12,6 +12,16 @@ import {
   Shield,
   BarChart3,
   Target,
+  CalendarDays,
+  CheckSquare,
+  Package,
+  FolderOpen,
+  Calculator,
+  Ruler,
+  ShoppingCart,
+  TrendingUp,
+  Globe,
+  FileBarChart,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -37,15 +47,31 @@ const mainItems = [
   { title: "Planejamento", url: "/planejamento", icon: Target },
 ];
 
+const projectItems = [
+  { title: "Cronograma", url: "/cronograma", icon: CalendarDays },
+  { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
+  { title: "Biblioteca", url: "/biblioteca", icon: Package },
+  { title: "Arquivos", url: "/arquivos", icon: FolderOpen },
+];
+
 const controlItems = [
   { title: "Contratos", url: "/contratos", icon: FileText },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Licitações", url: "/licitacoes", icon: Gavel },
+  { title: "Orçamento", url: "/orcamento", icon: Calculator },
+  { title: "Medições", url: "/medicoes", icon: Ruler },
+  { title: "Compras", url: "/compras", icon: ShoppingCart },
+];
+
+const salesItems = [
+  { title: "Funil de Vendas", url: "/crm", icon: TrendingUp },
+  { title: "Portal do Cliente", url: "/portal-config", icon: Globe },
 ];
 
 const systemItems = [
   { title: "Alertas", url: "/alertas", icon: Bell },
   { title: "Auditoria RDO", url: "/auditoria", icon: Shield },
+  { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
   { title: "Usuários", url: "/usuarios", icon: Users },
   { title: "Empresa", url: "/empresa/config", icon: Settings },
 ];
@@ -103,7 +129,9 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {renderGroup("Principal", mainItems)}
+        {renderGroup("Projetos", projectItems)}
         {renderGroup("Controle", controlItems)}
+        {renderGroup("Vendas e Clientes", salesItems)}
         {renderGroup("Sistema", systemItems)}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-3">

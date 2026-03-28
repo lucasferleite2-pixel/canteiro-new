@@ -27,8 +27,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function isDemoMode() {
-  if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("demo") === "true";
+  if (typeof window === 'undefined') return false;
+  return import.meta.env.VITE_DEMO_ENABLED === 'true';
 }
 
 const DEMO_COMPANY_ID = "00000000-0000-0000-0000-000000000000";

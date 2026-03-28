@@ -34,6 +34,8 @@ export default function DiarioObra() {
   const [showPdfFilter, setShowPdfFilter] = useState(false);
   const [showNcReport, setShowNcReport] = useState(false);
   const [filters, setFilters] = useState<RdoFilterValues>(defaultFilters);
+  const PAGE_SIZE = 50;
+  const [rdoPage, setRdoPage] = useState(0);
   const ai = useAIAnalysis();
 
   // Projects
@@ -68,7 +70,7 @@ export default function DiarioObra() {
 
   // RDO entries (new system)
   const { data: rdos = [], isLoading } = useQuery({
-    queryKey: ["rdo_dia", companyId, selectedProject],
+    queryKey: ["rdo_dia", companyId, selectedProject, rdoPage],
     queryFn: async () => {
       if (!companyId || !selectedProject) return [];
       const { data, error } = await supabase
@@ -76,7 +78,8 @@ export default function DiarioObra() {
         .select("*")
         .eq("company_id", companyId)
         .eq("obra_id", selectedProject)
-        .order("data", { ascending: false });
+        .order("data", { ascending: false })
+        .range(rdoPage * PAGE_SIZE, (rdoPage + 1) * PAGE_SIZE - 1);
       if (error) throw error;
       return data;
     },
@@ -321,7 +324,7 @@ export default function DiarioObra() {
       {/* Project selector */}
       <div className="flex items-center gap-3">
         <Label className="text-sm font-medium">Obra:</Label>
-        <Select value={selectedProject} onValueChange={(v) => { setSelectedProject(v); ai.clear(); setFilters(defaultFilters); }}>
+        <Select value={selectedProject} onValueChange={(v) => { setSelectedProject(v); ai.clear(); setFilters(defaultFilters); setRdoPage(0); }}>
           <SelectTrigger className="w-72"><SelectValue placeholder="Selecione uma obra" /></SelectTrigger>
           <SelectContent>
             {resolvedProjects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -433,6 +436,15 @@ export default function DiarioObra() {
                   onDelete={() => setDeleteId(rdo.id)}
                 />
               ))}
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <Button variant="outline" size="sm" disabled={rdoPage === 0} onClick={() => setRdoPage(p => p - 1)}>
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">Página {rdoPage + 1}</span>
+                <Button variant="outline" size="sm" disabled={filteredRdos.length < PAGE_SIZE} onClick={() => setRdoPage(p => p + 1)}>
+                  Próxima
+                </Button>
+              </div>
             </>
           )}
 

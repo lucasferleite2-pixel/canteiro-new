@@ -22,8 +22,8 @@ export default function Dashboard() {
         supabase.from("projects").select("id, status, budget").eq("company_id", companyId),
         supabase.from("diary_entries").select("id", { count: "exact" }).eq("company_id", companyId).gte("entry_date", new Date().toISOString().split("T")[0]),
         supabase.from("alerts").select("id", { count: "exact" }).eq("company_id", companyId).is("read_at", null),
-        supabase.from("financial_records").select("amount, type").eq("company_id", companyId),
-        supabase.from("rdo_dia").select("produtividade_percentual").eq("company_id", companyId),
+        supabase.from("financial_records").select("amount, type").eq("company_id", companyId).limit(500),
+        supabase.from("rdo_dia").select("produtividade_percentual").eq("company_id", companyId).limit(500),
       ]);
 
       const projects = projectsRes.data || [];
@@ -60,7 +60,7 @@ export default function Dashboard() {
 
       const { data: rdos } = await supabase
         .from("rdo_dia").select("obra_id, produtividade_percentual, risco_dia, data")
-        .eq("company_id", companyId);
+        .eq("company_id", companyId).limit(500);
 
       const rdoMap = new Map<string, typeof rdos>();
       (rdos || []).forEach((r) => {

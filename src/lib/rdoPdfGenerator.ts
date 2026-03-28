@@ -64,7 +64,11 @@ async function generateQR(text: string): Promise<string> {
 
 async function loadImageAsBase64(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
     const blob = await res.blob();
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -72,7 +76,9 @@ async function loadImageAsBase64(url: string): Promise<string | null> {
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(blob);
     });
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function buildPhotoCaption(foto: any, faseObra: string | null): string {

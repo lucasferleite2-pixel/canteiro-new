@@ -40,6 +40,22 @@ export interface TrendPoint {
   projetado?: number;
 }
 
+interface RdoItem {
+  data: string;
+  fase_obra?: string | null;
+  quantidade_executada?: number | null;
+  custo_dia?: number | null;
+  produtividade_percentual?: number | null;
+  unidade_medicao?: string | null;
+}
+
+interface PlanejamentoItem {
+  fase: string;
+  quantidade_planejada?: number | null;
+  custo_planejado?: number | null;
+  unidade?: string | null;
+}
+
 // ── Risk classification ──
 
 function classifyRisk(desvio: number): "baixo" | "medio" | "alto" | "critico" {
@@ -64,10 +80,12 @@ function movingAvgCostPerUnit(
 // ── Main calculation ──
 
 export function calculateProjectionModel(
-  rdos: any[],
-  planejamento: any[]
+  rdos: RdoItem[],
+  planejamento: PlanejamentoItem[]
 ): ProjectionResult {
-  const sorted = [...rdos].sort((a, b) => a.data.localeCompare(b.data));
+  const sorted = [...rdos]
+    .filter(r => !!r.data)
+    .sort((a, b) => a.data.localeCompare(b.data));
 
   // Group by phase
   const faseMap = new Map<
@@ -125,7 +143,7 @@ export function calculateProjectionModel(
       desvioPercentual: Math.max(0, desvioPercentual),
       riscoEstouro: classifyRisk(Math.max(0, desvioPercentual)),
       margemEstimada,
-      modelo: "regressao_linear",
+      modelo: "media_movel_7d",
     });
   });
 
