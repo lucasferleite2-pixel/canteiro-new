@@ -61,9 +61,16 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-50 min-w-[8rem] overflow-hidden rounded-2xl p-1 text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className,
       )}
+      style={{
+        background: "rgba(8,14,30,0.90)",
+        backdropFilter: "blur(48px) saturate(180%)",
+        WebkitBackdropFilter: "blur(48px) saturate(180%)",
+        border: "1px solid rgba(255,255,255,0.13)",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.65)",
+      }}
       {...props}
     />
   </DropdownMenuPrimitive.Portal>
@@ -79,7 +86,7 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground",
+      "relative flex cursor-pointer select-none items-center rounded-xl px-2 py-1.5 text-sm text-white/75 outline-none transition-all duration-150 data-[disabled]:pointer-events-none data-[disabled]:opacity-40 focus:bg-white/8 focus:text-white",
       inset && "pl-8",
       className,
     )}

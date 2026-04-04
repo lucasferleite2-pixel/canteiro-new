@@ -1,6 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Building2 } from "lucide-react";
 
 interface ProjectRow {
@@ -14,17 +11,17 @@ interface ProjectRow {
   risk_score: string;
 }
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  planning: { label: "Planejamento", variant: "outline" },
-  in_progress: { label: "Em Andamento", variant: "default" },
-  paused: { label: "Pausada", variant: "destructive" },
-  completed: { label: "Concluída", variant: "secondary" },
+const statusConfig: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  planning:    { label: "Planejamento", bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)", border: "rgba(255,255,255,0.12)" },
+  in_progress: { label: "Em Andamento", bg: "rgba(59,130,246,0.15)", color: "rgb(96,165,250)",        border: "rgba(59,130,246,0.30)" },
+  paused:      { label: "Pausada",      bg: "rgba(239,68,68,0.12)",  color: "rgb(248,113,113)",       border: "rgba(239,68,68,0.25)" },
+  completed:   { label: "Concluída",    bg: "rgba(34,197,94,0.12)",  color: "rgb(74,222,128)",        border: "rgba(34,197,94,0.25)" },
 };
 
-const riskBadge: Record<string, { label: string; className: string }> = {
-  alto: { label: "Alto", className: "bg-destructive/15 text-destructive border-destructive/30" },
-  medio: { label: "Médio", className: "bg-warning/15 text-warning border-warning/30" },
-  baixo: { label: "Baixo", className: "bg-success/15 text-success border-success/30" },
+const riskConfig: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  alto:  { label: "Alto",  bg: "rgba(239,68,68,0.12)",  color: "rgb(248,113,113)", border: "rgba(239,68,68,0.28)" },
+  medio: { label: "Médio", bg: "rgba(245,158,11,0.12)", color: "rgb(251,191,36)",  border: "rgba(245,158,11,0.28)" },
+  baixo: { label: "Baixo", bg: "rgba(34,197,94,0.12)",  color: "rgb(74,222,128)",  border: "rgba(34,197,94,0.28)" },
 };
 
 export function DashboardProjectsTable({ projects }: { projects: ProjectRow[] }) {
@@ -32,49 +29,111 @@ export function DashboardProjectsTable({ projects }: { projects: ProjectRow[] })
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", notation: "compact" }).format(v);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-primary" />
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: "rgba(255,255,255,0.05)",
+        backdropFilter: "blur(40px) saturate(160%)",
+        WebkitBackdropFilter: "blur(40px) saturate(160%)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07)",
+      }}
+    >
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <h3 className="text-sm font-semibold text-white/85 flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-blue-400" aria-hidden="true" />
           Resumo por Obra
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </h3>
+      </div>
+
+      <div className="px-5 py-4">
         {projects.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">Nenhuma obra cadastrada.</p>
+          <p className="text-sm text-white/35 py-4">Nenhuma obra cadastrada.</p>
         ) : (
-          <div className="overflow-x-auto -mx-2">
+          <div className="overflow-x-auto -mx-1">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="text-left py-2 px-2 font-medium">Obra</th>
-                  <th className="text-left py-2 px-2 font-medium">Status</th>
-                  <th className="text-right py-2 px-2 font-medium">Orçamento</th>
-                  <th className="text-center py-2 px-2 font-medium">RDOs</th>
-                  <th className="text-center py-2 px-2 font-medium">Produtividade</th>
-                  <th className="text-center py-2 px-2 font-medium">Risco</th>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                  {["Obra", "Status", "Orçamento", "RDOs", "Produtividade", "Risco"].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left py-2 px-2 text-[11px] font-medium uppercase tracking-wide"
+                      style={{ color: "rgba(255,255,255,0.35)" }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {projects.map((p) => {
                   const st = statusConfig[p.status] || statusConfig.planning;
-                  const risk = riskBadge[p.risk_score] || riskBadge.baixo;
+                  const risk = riskConfig[p.risk_score] || riskConfig.baixo;
+                  const prodColor =
+                    p.avg_productivity >= 70 ? "rgb(74,222,128)" :
+                    p.avg_productivity >= 50 ? "rgb(251,191,36)" :
+                    "rgb(248,113,113)";
+                  const prodBg =
+                    p.avg_productivity >= 70 ? "rgba(34,197,94,0.35)" :
+                    p.avg_productivity >= 50 ? "rgba(245,158,11,0.35)" :
+                    "rgba(239,68,68,0.35)";
+
                   return (
-                    <tr key={p.id} className="border-b last:border-0 hover:bg-primary/5 transition-colors" style={{ borderBottomColor: "rgba(0,0,0,0.06)" }}>
-                      <td className="py-2.5 px-2 font-medium max-w-[180px] truncate">{p.name}</td>
+                    <tr
+                      key={p.id}
+                      className="transition-all duration-150 group"
+                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                    >
                       <td className="py-2.5 px-2">
-                        <Badge variant={st.variant} className="text-xs">{st.label}</Badge>
+                        <span className="font-medium text-white/80 max-w-[180px] truncate block group-hover:text-white transition-colors duration-150">
+                          {p.name}
+                        </span>
                       </td>
-                      <td className="py-2.5 px-2 text-right tabular-nums">{formatCurrency(p.budget || 0)}</td>
-                      <td className="py-2.5 px-2 text-center tabular-nums">{p.rdo_count}</td>
+                      <td className="py-2.5 px-2">
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium"
+                          style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}` }}
+                        >
+                          {st.label}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-2 text-right tabular-nums text-white/60">
+                        {formatCurrency(p.budget || 0)}
+                      </td>
+                      <td className="py-2.5 px-2 text-center tabular-nums text-white/60">
+                        {p.rdo_count}
+                      </td>
                       <td className="py-2.5 px-2">
                         <div className="flex items-center gap-2">
-                          <Progress value={p.avg_productivity} className="h-2 flex-1" />
-                          <span className="text-xs tabular-nums w-8 text-right">{p.avg_productivity}%</span>
+                          {/* Progress bar */}
+                          <div
+                            className="flex-1 h-1.5 rounded-full overflow-hidden"
+                            style={{ background: "rgba(255,255,255,0.08)" }}
+                          >
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${Math.min(p.avg_productivity, 100)}%`,
+                                background: `linear-gradient(90deg, ${prodBg}, ${prodColor})`,
+                                boxShadow: `0 0 6px ${prodColor}55`,
+                              }}
+                            />
+                          </div>
+                          <span
+                            className="text-xs tabular-nums w-8 text-right font-medium"
+                            style={{ color: prodColor }}
+                          >
+                            {p.avg_productivity}%
+                          </span>
                         </div>
                       </td>
                       <td className="py-2.5 px-2 text-center">
-                        <Badge variant="outline" className={`text-xs ${risk.className}`}>{risk.label}</Badge>
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium"
+                          style={{ background: risk.bg, color: risk.color, border: `1px solid ${risk.border}` }}
+                        >
+                          {risk.label}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -83,7 +142,7 @@ export function DashboardProjectsTable({ projects }: { projects: ProjectRow[] })
             </table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -74,6 +74,20 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "2xl": "1.25rem",
+        "3xl": "1.5rem",
+        "4xl": "2rem",
+      },
+      backdropBlur: {
+        xs: "2px",
+        "4xl": "72px",
+      },
+      boxShadow: {
+        glass: "0 8px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
+        "glass-lg": "0 24px 80px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.10)",
+        "glow-blue": "0 0 24px rgba(59,130,246,0.25)",
+        "glow-active": "0 0 16px rgba(59,130,246,0.45)",
+        dock: "0 16px 64px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)",
       },
       keyframes: {
         "accordion-down": {
@@ -84,12 +98,28 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "glass-fade-in": {
+          from: { opacity: "0", transform: "translateY(8px) scale(0.98)" },
+          to:   { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "dock-bounce-in": {
+          "0%":   { opacity: "0", transform: "translateX(-50%) translateY(24px) scale(0.92)" },
+          "60%":  { transform: "translateX(-50%) translateY(-4px) scale(1.01)" },
+          "100%": { opacity: "1", transform: "translateX(-50%) translateY(0) scale(1)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(59,130,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)" },
+          "50%":       { boxShadow: "0 0 32px rgba(59,130,246,0.28), inset 0 1px 0 rgba(255,255,255,0.08)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "glass-fade-in": "glass-fade-in 0.35s cubic-bezier(0.34,1.4,0.64,1) both",
+        "dock-bounce-in": "dock-bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
+        "glow-pulse": "glow-pulse 2.8s ease-in-out infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;

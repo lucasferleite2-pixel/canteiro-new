@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"C:\\\\Users\\\\Micro\\\\Downloads\\\\canteiro-inteli-main \\(1\\)\\\\canteiro-inteli-main\" -maxdepth 2 -type f -name \"*.json\" -o -name \"*.config.*\" | head -20)",
+      "Bash(ls -la \"C:\\\\Users\\\\Micro\\\\Downloads\\\\canteiro-inteli-main \\(1\\)\\\\canteiro-inteli-main\" 2>/dev/null | head -50)",
+      "Bash(find \"C:\\\\Users\\\\Micro\\\\Downloads\\\\canteiro-inteli-main \\(1\\)\\\\canteiro-inteli-main/src\" -type f -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.css\" | sort)",
+      "Bash(cd \"C:\\\\Users\\\\Micro\\\\Downloads\\\\canteiro-inteli-main \\(1\\)\\\\canteiro-inteli-main\" && npx tsc --noEmit 2>&1 | head -60)",
+      "Bash(cd \"C:\\\\Users\\\\Micro\\\\Downloads\\\\canteiro-inteli-main \\(1\\)\\\\canteiro-inteli-main\" && npx tsc --noEmit 2>&1)"
+    ]
+  }
+}
