@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ImageIcon, Upload, X, Trash2, CalendarIcon, Pencil, Check } from "lucide-react";
+import { Loader2, ImageIcon, Upload, X, Trash2, CalendarIcon, Pencil, Check, RefreshCw, WifiOff, Cloud } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { compressImage, getGPSFromBrowser } from "@/lib/imageCompression";
+import { compressImage, capturePhotoMetadata } from "@/lib/imageCompression";
+import { addToQueue, getAllItems, updateItemStatus, removeItem, getPendingCount, type QueueItem } from "@/lib/offlinePhotoQueue";
+import { processSyncQueue } from "@/lib/photoSyncService";
 
 interface Props {
   rdoDiaId: string;
@@ -33,6 +36,8 @@ const tagRiscoOptions = [
   { value: "contratual", label: "Contratual" },
 ];
 
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
 export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -48,13 +53,29 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
   const [faseObra, setFaseObra] = useState("");
   const [tagRisco, setTagRisco] = useState("nenhuma");
   const [uploading, setUploading] = useState(false);
-  
+
+  // IndexedDB queue state
+  const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Inline edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
   const [editDate, setEditDate] = useState<Date>(new Date());
+
+  const refreshQueue = useCallback(async () => {
+    const all = await getAllItems();
+    const forThisRdo = all.filter((i) => i.rdoDiaId === rdoDiaId && i.status !== "done");
+    setQueueItems(forThisRdo);
+    const count = await getPendingCount();
+    setPendingCount(count);
+  }, [rdoDiaId]);
+
+  useEffect(() => {
+    refreshQueue();
+  }, [refreshQueue]);
 
   const { data: fotos = [], isLoading } = useQuery({
     queryKey: ["rdo_foto", rdoDiaId],
@@ -110,16 +131,83 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
     updateMutation.mutate({ id: editingId, file_name: editName, descricao: editDescricao, data_captura: editDate.toISOString() });
   };
 
-  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+
     setSelectedFiles(files);
     setPreviews(files.map((f) => URL.createObjectURL(f)));
     setDisplayNames(files.map((f) => f.name.replace(/\.[^/.]+$/, "")));
     const defaultDate = rdoDate ? new Date(rdoDate + "T12:00:00") : new Date();
     setCapturedDates(files.map(() => defaultDate));
-    
     setShowUpload(true);
+
+    // Save each file to IndexedDB queue immediately
+    for (const file of files) {
+      try {
+        const compressed = await compressImage(file);
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(compressed);
+        });
+
+        const fileName = `${crypto.randomUUID()}.jpg`;
+        const placeholderMeta = {
+          captured_at: new Date().toISOString(),
+          latitude: null,
+          longitude: null,
+          accuracy_meters: null,
+          address: null,
+          weather_description: null,
+          device_info: navigator.userAgent.substring(0, 200),
+        };
+
+        const localId = await addToQueue({
+          rdoDiaId,
+          companyId,
+          base64,
+          mimeType: "image/jpeg",
+          fileName,
+          metadata: placeholderMeta,
+        });
+
+        // Capture metadata in background and update the queued item
+        capturePhotoMetadata().then(async (meta) => {
+          const all = await getAllItems();
+          const queuedItem = all.find((i) => i.localId === localId);
+          if (queuedItem) {
+            await removeItem(localId);
+            await addToQueue({
+              rdoDiaId: queuedItem.rdoDiaId,
+              companyId: queuedItem.companyId,
+              base64: queuedItem.base64,
+              mimeType: queuedItem.mimeType,
+              fileName: queuedItem.fileName,
+              metadata: meta,
+            });
+          }
+          await refreshQueue();
+        }).catch(() => { /* metadata failure is non-blocking */ });
+
+        await refreshQueue();
+
+        if (!navigator.onLine) {
+          sonnerToast.warning("Foto salva localmente. Será enviada quando houver sinal.", {
+            icon: "📵",
+            duration: 4000,
+          });
+        } else {
+          processSyncQueue(supabase).then(() => {
+            queryClient.invalidateQueries({ queryKey: ["rdo_foto", rdoDiaId] });
+            refreshQueue();
+          });
+        }
+      } catch (err) {
+        console.error("Failed to queue photo:", err);
+      }
+    }
   };
 
   const clearForm = () => {
@@ -128,7 +216,6 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
     setPreviews([]);
     setDisplayNames([]);
     setCapturedDates([]);
-    
     setDescricao("");
     setFaseObra("");
     setTagRisco("nenhuma");
@@ -146,8 +233,6 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
     }
     setUploading(true);
     try {
-      const gps = await getGPSFromBrowser();
-
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         const compressed = await compressImage(file);
@@ -166,8 +251,6 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
           fase_obra: faseObra || null,
           tag_risco: tagRisco,
           uploaded_by: user.id,
-          latitude: gps?.latitude ?? null,
-          longitude: gps?.longitude ?? null,
           data_captura: capturedDates[i]?.toISOString() || new Date().toISOString(),
         });
         if (dbErr) throw dbErr;
@@ -183,6 +266,21 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
     }
   };
 
+  const handleSyncNow = async () => {
+    setIsSyncing(true);
+    await processSyncQueue(supabase);
+    queryClient.invalidateQueries({ queryKey: ["rdo_foto", rdoDiaId] });
+    await refreshQueue();
+    setIsSyncing(false);
+  };
+
+  const handleRetryItem = async (item: QueueItem) => {
+    if (!item.localId) return;
+    await updateItemStatus(item.localId, "pending");
+    await refreshQueue();
+    await handleSyncNow();
+  };
+
   const tagColors: Record<string, string> = {
     nenhuma: "",
     "técnico": "bg-blue-500/10 text-blue-700 dark:text-blue-400",
@@ -190,10 +288,45 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
     contratual: "bg-red-500/10 text-red-700 dark:text-red-400",
   };
 
+  const statusBadge = (item: QueueItem) => {
+    const isOld = Date.now() - new Date(item.createdAt).getTime() > TWENTY_FOUR_HOURS;
+    if (item.status === "error") {
+      return (
+        <div className="flex flex-col gap-1">
+          <Badge className="text-[8px] h-4 bg-red-500/10 text-red-700">Erro</Badge>
+          {isOld && <p className="text-[8px] text-amber-600 leading-tight">Pendente há +24h</p>}
+        </div>
+      );
+    }
+    if (item.status === "uploading") {
+      return <Badge className="text-[8px] h-4 bg-blue-500/10 text-blue-700">Enviando...</Badge>;
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        <Badge className="text-[8px] h-4 bg-yellow-500/10 text-yellow-700">Aguardando sinal</Badge>
+        {isOld && <p className="text-[8px] text-amber-600 leading-tight">⚠ +24h pendente</p>}
+      </div>
+    );
+  };
+
   if (isLoading) return <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
 
   return (
     <div className="space-y-4">
+      {/* Pending count banner */}
+      {pendingCount > 0 && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 px-3 py-2">
+          <div className="flex items-center gap-2 text-sm text-yellow-800 dark:text-yellow-300">
+            <WifiOff className="h-4 w-4 shrink-0" />
+            <span>Você tem <strong>{pendingCount}</strong> foto(s) salva(s) localmente aguardando envio.</span>
+          </div>
+          <Button size="sm" variant="outline" className="shrink-0 h-7 text-xs" onClick={handleSyncNow} disabled={isSyncing}>
+            {isSyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            <span className="ml-1">Sincronizar agora</span>
+          </Button>
+        </div>
+      )}
+
       {/* Upload button */}
       {canEdit && !showUpload && (
         <div className="flex justify-center">
@@ -230,10 +363,7 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
                   <Label className="text-xs text-muted-foreground">Data</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-7 w-full justify-start text-left text-xs font-normal"
-                      >
+                      <Button variant="outline" className="h-7 w-full justify-start text-left text-xs font-normal">
                         <CalendarIcon className="mr-1 h-3 w-3" />
                         {format(capturedDates[i] || new Date(), "dd/MM/yyyy")}
                       </Button>
@@ -243,9 +373,7 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
                         mode="single"
                         selected={capturedDates[i]}
                         onSelect={(date) => {
-                          if (date) {
-                            setCapturedDates((prev) => prev.map((d, j) => j === i ? date : d));
-                          }
+                          if (date) setCapturedDates((prev) => prev.map((d, j) => j === i ? date : d));
                         }}
                         disabled={(date) => date > new Date()}
                         locale={ptBR}
@@ -292,23 +420,32 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
         </div>
       )}
 
-      {/* Gallery */}
-      {fotos.length === 0 && !showUpload ? (
+      {/* Gallery — uploaded + pending */}
+      {fotos.length === 0 && queueItems.length === 0 && !showUpload ? (
         <div className="text-center py-6 text-muted-foreground">
           <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">Nenhuma foto neste registro.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {/* Uploaded (Supabase) photos */}
           {fotos.map((f: any) => (
             <div key={f.id} className="relative group rounded-md overflow-hidden border">
               <img src={f.url} alt={f.descricao || f.file_name} className="w-full aspect-square object-cover" loading="lazy" />
+
+              {/* Sync badge */}
+              <div className="absolute top-1 left-1">
+                <Badge className="text-[8px] h-4 bg-green-500/10 text-green-700 gap-0.5">
+                  <Cloud className="h-2.5 w-2.5" /> Sincronizado
+                </Badge>
+              </div>
+
               {canEdit && editingId !== f.id && (
                 <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => startEditing(f)} className="bg-black/60 text-white rounded-full p-1">
+                  <button onClick={() => startEditing(f)} className="bg-black/60 text-white rounded-full p-1 cursor-pointer">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => deleteMutation.mutate(f)} className="bg-black/60 text-white rounded-full p-1">
+                  <button onClick={() => deleteMutation.mutate(f)} className="bg-black/60 text-white rounded-full p-1 cursor-pointer">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -355,6 +492,8 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
                   {f.data_captura && (
                     <p className="text-[9px] text-white/80">{format(new Date(f.data_captura), "dd/MM/yyyy", { locale: ptBR })}</p>
                   )}
+                  {f.address && <p className="text-[9px] text-white/70 truncate">{f.address}</p>}
+                  {f.weather_description && <p className="text-[9px] text-white/70 truncate">{f.weather_description}</p>}
                   {f.descricao && <p className="text-[10px] text-white/90 line-clamp-1 mt-0.5">{f.descricao}</p>}
                   <div className="flex gap-1 mt-0.5">
                     {f.fase_obra && <Badge variant="secondary" className="text-[8px] h-4">{f.fase_obra}</Badge>}
@@ -364,6 +503,46 @@ export function RdoFotoTab({ rdoDiaId, companyId, canEdit, rdoDate }: Props) {
                   </div>
                 </div>
               )}
+            </div>
+          ))}
+
+          {/* Pending (IndexedDB) photos */}
+          {queueItems.map((item) => (
+            <div key={`q-${item.localId}`} className="relative rounded-md overflow-hidden border border-dashed border-yellow-300 dark:border-yellow-700">
+              <div className="w-full aspect-square bg-muted flex items-center justify-center">
+                {item.base64 ? (
+                  <img src={item.base64} alt={item.fileName} className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                )}
+              </div>
+
+              <div className="absolute top-1 left-1">
+                {statusBadge(item)}
+              </div>
+
+              {item.status === "error" && (item.attempts || 0) <= 3 && (
+                <div className="absolute top-1 right-1">
+                  <button onClick={() => handleRetryItem(item)} className="bg-black/60 text-white rounded-full p-1 cursor-pointer" title="Tentar novamente">
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                <p className="text-[10px] text-white font-medium truncate">{item.fileName}</p>
+                {item.metadata.address && (
+                  <p className="text-[9px] text-white/70 truncate">{item.metadata.address}</p>
+                )}
+                {item.metadata.weather_description && (
+                  <p className="text-[9px] text-white/70 truncate">{item.metadata.weather_description}</p>
+                )}
+                {Date.now() - new Date(item.createdAt).getTime() > TWENTY_FOUR_HOURS && (
+                  <p className="text-[8px] text-amber-400 mt-0.5">
+                    Conecte-se ao Wi-Fi para não perder.
+                  </p>
+                )}
+              </div>
             </div>
           ))}
         </div>

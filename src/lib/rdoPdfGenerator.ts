@@ -747,7 +747,9 @@ class PhotoGridBlock implements PdfBlock {
     const figTitle = `Figura ${String(entry.figureNum).padStart(2, "0")} - ${sanitizeText(caption.substring(0, 80))}`;
     const figLines = doc.splitTextToSize(figTitle, this.imgW);
     let h = figLines.length * 3.5 + 1;
-    if (entry.foto.data_captura) h += 3.5;
+    if (entry.foto.captured_at || entry.foto.data_captura) h += 3.5;
+    if (entry.foto.address) h += 3.5;
+    if (entry.foto.weather_description) h += 3.5;
     if (entry.foto.latitude && entry.foto.longitude) h += 3.5;
     if (entry.foto.fase_obra) h += 3.5;
     if (entry.foto.tag_risco && entry.foto.tag_risco !== "nenhuma") h += 3.5;
@@ -792,12 +794,22 @@ class PhotoGridBlock implements PdfBlock {
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(GRAY_TEXT[0], GRAY_TEXT[1], GRAY_TEXT[2]);
-    if (entry.foto.data_captura) {
-      doc.text(`Data da captura: ${fmtDateTime(entry.foto.data_captura)}`, x, cy);
+    const dateField = entry.foto.captured_at || entry.foto.data_captura;
+    if (dateField) {
+      doc.text(`Data: ${fmtDateTime(dateField)}`, x, cy);
+      cy += 3.5;
+    }
+    if (entry.foto.address) {
+      const addrLines = doc.splitTextToSize(`Local: ${sanitizeText(entry.foto.address)}`, this.imgW);
+      doc.text(addrLines, x, cy);
+      cy += addrLines.length * 3.5;
+    }
+    if (entry.foto.weather_description) {
+      doc.text(`Clima: ${sanitizeText(entry.foto.weather_description)}`, x, cy);
       cy += 3.5;
     }
     if (entry.foto.latitude && entry.foto.longitude) {
-      doc.text(`Local (GPS): ${entry.foto.latitude.toFixed(5)}, ${entry.foto.longitude.toFixed(5)}`, x, cy);
+      doc.text(`GPS: ${entry.foto.latitude.toFixed(5)}, ${entry.foto.longitude.toFixed(5)}`, x, cy);
       cy += 3.5;
     }
     if (entry.foto.fase_obra) {

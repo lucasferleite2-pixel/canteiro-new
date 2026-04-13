@@ -1,10 +1,19 @@
+import { useEffect } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell, LogOut, HardHat } from "lucide-react";
 import { AppDock } from "@/components/AppDock";
+import { supabase } from "@/integrations/supabase/client";
+import { startSyncService } from "@/lib/photoSyncService";
 
 export function AppLayout() {
   const { profile, companyId, signOut, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      startSyncService(supabase, user.id);
+    }
+  }, [user]);
 
   if (user && !companyId && profile) {
     return <Navigate to="/empresa" replace />;
