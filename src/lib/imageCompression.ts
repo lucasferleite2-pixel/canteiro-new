@@ -104,6 +104,104 @@ export interface PhotoMetadataResult {
   device_info: string;
 }
 
+export type PhotoMetadata = PhotoMetadataResult;
+
+/**
+ * Draws metadata as a stamp overlay on the bottom of an image using the Canvas API.
+ * Works on iOS Safari and Chrome Android.
+ * If canvas fails for any reason, returns the original file unchanged.
+ */
+export async function stampPhotoWithMetadata(
+  file: File,
+  metadata: PhotoMetadata
+): Promise<File> {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith("image/")) {
+      resolve(file);
+      return;
+    }
+
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(file); return; }
+
+        ctx.drawImage(img, 0, 0);
+
+        const barHeight = 80;
+        const yBar = canvas.height - barHeight;
+
+        // Semi-transparent dark bar
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, yBar, canvas.width, barHeight);
+
+        const padZero = (n: number) => String(n).padStart(2, "0");
+        const d = new Date(metadata.captured_at);
+        const dateStr = `${padZero(d.getDate())}/${padZero(d.getMonth() + 1)}/${d.getFullYear()} ${padZero(d.getHours())}:${padZero(d.getMinutes())}`;
+
+        const px = 12;
+        ctx.fillStyle = "#ffffff";
+        ctx.textBaseline = "top";
+
+        // Line 1 (left): date — bold 14px
+        ctx.font = "bold 14px 'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText(`📅 ${dateStr}`, px, yBar + 8);
+
+        // Line 2 (left): address — 12px
+        const address = metadata.address ?? "Capturando localização...";
+        ctx.font = "12px 'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText(`📍 ${address}`, px, yBar + 30);
+
+        // Line 3 (left): weather — 12px
+        if (metadata.weather_description) {
+          ctx.fillText(`🌤 ${metadata.weather_description}`, px, yBar + 50);
+        }
+
+        // Bottom-right corner: branding — 10px, opacity 0.7
+        ctx.globalAlpha = 0.7;
+        ctx.font = "10px 'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("ERP Obra Inteligente", canvas.width - px, canvas.height - 6);
+        ctx.globalAlpha = 1;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return; }
+            const baseName = file.name.replace(/\.[^/.]+$/, "");
+            const stamped = new File([blob], `${baseName}_stamped.jpg`, {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(stamped);
+          },
+          "image/jpeg",
+          0.9
+        );
+      } catch {
+        resolve(file);
+      }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+
+    img.src = url;
+  });
+}
+
 const WEATHER_CODES: Array<[number[], string]> = [
   [[0], "Céu limpo"],
   [[1, 2, 3], "Parcialmente nublado"],

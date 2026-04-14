@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
-import { compressImage, capturePhotoMetadata } from "@/lib/imageCompression";
+import { compressImage, capturePhotoMetadata, stampPhotoWithMetadata } from "@/lib/imageCompression";
 import { useQueryClient } from "@tanstack/react-query";
 import { addToQueue, getAllItems, getPendingCount, updateItemStatus, removeItem, type QueueItem } from "@/lib/offlinePhotoQueue";
 import { processSyncQueue } from "@/lib/photoSyncService";
@@ -87,11 +87,32 @@ export function DiaryPhotoUpload({ entryId, projectId, companyId, contracts = []
     for (const file of files) {
       try {
         const compressed = await compressImage(file);
+
+        const stampToastId = sonnerToast.loading("🖊️ Adicionando carimbo...", { duration: 10000 });
+        let readyFile: File;
+        try {
+          const placeholderMeta = {
+            captured_at: new Date().toISOString(),
+            latitude: null,
+            longitude: null,
+            accuracy_meters: null,
+            address: null,
+            weather_description: null,
+            device_info: navigator.userAgent.substring(0, 200),
+          };
+          const stamped = await stampPhotoWithMetadata(compressed, placeholderMeta);
+          readyFile = await compressImage(stamped);
+        } catch {
+          readyFile = compressed;
+        } finally {
+          sonnerToast.dismiss(stampToastId);
+        }
+
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.onerror = reject;
-          reader.readAsDataURL(compressed);
+          reader.readAsDataURL(readyFile);
         });
 
         const fileName = `${crypto.randomUUID()}.jpg`;
@@ -179,8 +200,19 @@ export function DiaryPhotoUpload({ entryId, projectId, companyId, contracts = []
         let fileToUpload: File;
         let mimeType: string;
         try {
-          fileToUpload = await compressImage(item.file);
-          mimeType = fileToUpload.type || "image/jpeg";
+          const compressed = await compressImage(item.file);
+          const placeholderMeta = {
+            captured_at: item.capturedAt.toISOString(),
+            latitude: null,
+            longitude: null,
+            accuracy_meters: null,
+            address: null,
+            weather_description: null,
+            device_info: navigator.userAgent.substring(0, 200),
+          };
+          const stamped = await stampPhotoWithMetadata(compressed, placeholderMeta);
+          fileToUpload = await compressImage(stamped);
+          mimeType = "image/jpeg";
         } catch {
           fileToUpload = item.file;
           mimeType = item.file.type || "application/octet-stream";
