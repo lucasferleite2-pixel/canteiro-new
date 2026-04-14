@@ -367,6 +367,19 @@ export default function Financeiro() {
   return (
     <div className="space-y-6">
       <DemoBanner />
+      <div className="mb-4 flex items-center gap-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm">
+        <span>💡</span>
+        <span className="text-blue-800">
+          Novo: Acesse o{" "}
+          <button
+            className="underline font-medium text-blue-600 hover:text-blue-800"
+            onClick={() => navigate("/fluxo-caixa")}
+          >
+            Fluxo de Caixa completo
+          </button>
+          {" "}com contas a pagar, receber e gráficos →
+        </span>
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>

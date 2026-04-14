@@ -23,6 +23,7 @@ import {
   Globe,
   FileBarChart,
   Upload,
+  Landmark,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -58,6 +59,8 @@ const projectItems = [
 const controlItems = [
   { title: "Contratos", url: "/contratos", icon: FileText },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
+  { title: "Fluxo de Caixa", url: "/fluxo-caixa", icon: TrendingUp },
+  { title: "Contas Bancárias", url: "/contas-bancarias", icon: Landmark },
   { title: "Licitações", url: "/licitacoes", icon: Gavel },
   { title: "Orçamento", url: "/orcamento", icon: Calculator },
   { title: "Medições", url: "/medicoes", icon: Ruler },
@@ -70,6 +73,7 @@ const salesItems = [
 ];
 
 const systemItems = [
+  { title: "Modo Campo", url: "/campo", icon: HardHat },
   { title: "Alertas", url: "/alertas", icon: Bell },
   { title: "Auditoria RDO", url: "/auditoria", icon: Shield },
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart },

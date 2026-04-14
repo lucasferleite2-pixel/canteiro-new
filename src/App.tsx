@@ -1,6 +1,5 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -33,17 +32,9 @@ import PortalCliente from "@/pages/PortalCliente";
 import PortalClientePublico from "@/pages/PortalClientePublico";
 import Relatorios from "@/pages/Relatorios";
 import ImportarDados from "@/pages/ImportarDados";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import FluxoCaixa from "@/pages/FluxoCaixa";
+import ContasBancarias from "@/pages/ContasBancarias";
+import Campo from "@/pages/Campo";
 
 function ProtectedAppLayout() {
   return (
@@ -62,12 +53,11 @@ function ProtectedCompanySetup() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
+  <TooltipProvider>
+    <Sonner />
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/empresa" element={<ProtectedCompanySetup />} />
             <Route path="/portal/:token" element={<PortalClientePublico />} />
@@ -95,14 +85,16 @@ const App = () => (
               <Route path="/portal-config" element={<PortalCliente />} />
               <Route path="/relatorios" element={<Relatorios />} />
               <Route path="/importar-dados" element={<ImportarDados />} />
+              <Route path="/fluxo-caixa" element={<FluxoCaixa />} />
+              <Route path="/contas-bancarias" element={<ContasBancarias />} />
             </Route>
+            <Route path="/campo" element={<Campo />} />
             <Route path="/verificar/:documentId" element={<VerificarDocumento />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
 );
 
 export default App;
