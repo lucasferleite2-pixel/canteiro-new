@@ -38,6 +38,11 @@ import ContasBancarias from "@/pages/ContasBancarias";
 import Campo from "@/pages/Campo";
 import Sinapi from "@/pages/Sinapi";
 import Composicoes from "@/pages/Composicoes";
+import Estoque from "@/pages/Estoque";
+import EstoqueMovimentacoes from "@/pages/EstoqueMovimentacoes";
+import EstoqueNovaMovimentacao from "@/pages/EstoqueNovaMovimentacao";
+import ProdutosEstoque from "@/pages/ProdutosEstoque";
+import Depositos from "@/pages/Depositos";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -104,6 +109,11 @@ const App = () => (
               <Route path="/contas-bancarias" element={<ContasBancarias />} />
               <Route path="/sinapi" element={<Sinapi />} />
               <Route path="/composicoes" element={<Composicoes />} />
+              <Route path="/estoque" element={<Estoque />} />
+              <Route path="/estoque/movimentacoes" element={<EstoqueMovimentacoes />} />
+              <Route path="/estoque/nova" element={<EstoqueNovaMovimentacao />} />
+              <Route path="/estoque/produtos" element={<ProdutosEstoque />} />
+              <Route path="/estoque/depositos" element={<Depositos />} />
             </Route>
             <Route path="/campo" element={<Campo />} />
             <Route path="/verificar/:documentId" element={<VerificarDocumento />} />

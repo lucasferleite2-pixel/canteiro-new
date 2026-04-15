@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ShoppingCart, Loader2, ArrowRight } from "lucide-react";
+import { Plus, ShoppingCart, Loader2, ArrowRight, Package } from "lucide-react";
 
 const STATUS_CONFIG = {
   rascunho: { label: "Rascunho", variant: "secondary" as const },
@@ -40,6 +41,7 @@ const emptyForm = {
 export default function GestaoCompras() {
   const { companyId, user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -173,11 +175,18 @@ export default function GestaoCompras() {
                     <TableCell>{o.requested_at || "—"}</TableCell>
                     <TableCell>{o.expected_delivery || "—"}</TableCell>
                     <TableCell>
-                      {nextStatus && (
-                        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => advanceStatus.mutate({ id: o.id, status: nextStatus })}>
-                          <ArrowRight className="h-3 w-3 mr-1" /> Avançar
-                        </Button>
-                      )}
+                      <div className="flex gap-1 flex-wrap">
+                        {nextStatus && (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => advanceStatus.mutate({ id: o.id, status: nextStatus })}>
+                            <ArrowRight className="h-3 w-3 mr-1" /> Avançar
+                          </Button>
+                        )}
+                        {o.status === "recebido" && (
+                          <Button variant="outline" size="sm" className="h-7 text-xs text-green-700 border-green-300 hover:bg-green-50" onClick={() => navigate(`/estoque/nova?tipo=entrada&doc_ref=${encodeURIComponent(o.order_number || o.id.slice(-6).toUpperCase())}`)}>
+                            <Package className="h-3 w-3 mr-1" /> Entrada no Estoque
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,6 +26,7 @@ export function RdoMaterialTab({ rdoDiaId, companyId, canEdit }: Props) {
   const { toast } = useToast();
   const { isDemo } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ tipo: "Consumo", item: "", quantidade: "", unidade: "un", valor_unitario: "", previsto: true });
 
@@ -116,11 +118,22 @@ export function RdoMaterialTab({ rdoDiaId, companyId, canEdit }: Props) {
                     <TableCell className="text-xs text-right">R$ {Number(m.valor_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell className="text-xs text-right font-medium">R$ {Number(m.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>
-                      {canEdit && (
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteMutation.mutate(m.id)}>
-                          <Trash2 className="h-3 w-3 text-destructive" />
+                      <div className="flex gap-1">
+                        {canEdit && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteMutation.mutate(m.id)}>
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] px-1.5 text-blue-600"
+                          onClick={() => navigate(`/estoque/nova?tipo=saida`)}
+                          title="Baixar do estoque"
+                        >
+                          📦 Baixar
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

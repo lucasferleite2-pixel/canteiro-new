@@ -25,6 +25,10 @@ import {
   Upload,
   Landmark,
   Database,
+  Layers,
+  ArrowLeftRight,
+  Box,
+  Warehouse,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -61,6 +65,13 @@ const engenhariaItems = [
   { title: "Orçamento", url: "/orcamento", icon: Calculator },
   { title: "Base SINAPI", url: "/sinapi", icon: Database },
   { title: "Composições", url: "/composicoes", icon: Layers },
+];
+
+const estoqueItems = [
+  { title: "Visão Geral", url: "/estoque", icon: Package },
+  { title: "Movimentações", url: "/estoque/movimentacoes", icon: ArrowLeftRight },
+  { title: "Produtos", url: "/estoque/produtos", icon: Box },
+  { title: "Depósitos", url: "/estoque/depositos", icon: Warehouse },
 ];
 
 const controlItems = [
@@ -145,6 +156,7 @@ export function AppSidebar() {
         {renderGroup("Principal", mainItems)}
         {renderGroup("Projetos", projectItems)}
         {renderGroup("Engenharia", engenhariaItems)}
+        {renderGroup("Estoque", estoqueItems)}
         {renderGroup("Controle", controlItems)}
         {renderGroup("Vendas e Clientes", salesItems)}
         {renderGroup("Sistema", systemItems)}
