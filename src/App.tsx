@@ -36,6 +36,8 @@ import ImportarDados from "@/pages/ImportarDados";
 import FluxoCaixa from "@/pages/FluxoCaixa";
 import ContasBancarias from "@/pages/ContasBancarias";
 import Campo from "@/pages/Campo";
+import Sinapi from "@/pages/Sinapi";
+import Composicoes from "@/pages/Composicoes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +102,8 @@ const App = () => (
               <Route path="/importar-dados" element={<ImportarDados />} />
               <Route path="/fluxo-caixa" element={<FluxoCaixa />} />
               <Route path="/contas-bancarias" element={<ContasBancarias />} />
+              <Route path="/sinapi" element={<Sinapi />} />
+              <Route path="/composicoes" element={<Composicoes />} />
             </Route>
             <Route path="/campo" element={<Campo />} />
             <Route path="/verificar/:documentId" element={<VerificarDocumento />} />

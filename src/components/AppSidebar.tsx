@@ -24,6 +24,7 @@ import {
   FileBarChart,
   Upload,
   Landmark,
+  Database,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -56,13 +57,18 @@ const projectItems = [
   { title: "Arquivos", url: "/arquivos", icon: FolderOpen },
 ];
 
+const engenhariaItems = [
+  { title: "Orçamento", url: "/orcamento", icon: Calculator },
+  { title: "Base SINAPI", url: "/sinapi", icon: Database },
+  { title: "Composições", url: "/composicoes", icon: Layers },
+];
+
 const controlItems = [
   { title: "Contratos", url: "/contratos", icon: FileText },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Fluxo de Caixa", url: "/fluxo-caixa", icon: TrendingUp },
   { title: "Contas Bancárias", url: "/contas-bancarias", icon: Landmark },
   { title: "Licitações", url: "/licitacoes", icon: Gavel },
-  { title: "Orçamento", url: "/orcamento", icon: Calculator },
   { title: "Medições", url: "/medicoes", icon: Ruler },
   { title: "Compras", url: "/compras", icon: ShoppingCart },
 ];
@@ -138,6 +144,7 @@ export function AppSidebar() {
       <SidebarContent>
         {renderGroup("Principal", mainItems)}
         {renderGroup("Projetos", projectItems)}
+        {renderGroup("Engenharia", engenhariaItems)}
         {renderGroup("Controle", controlItems)}
         {renderGroup("Vendas e Clientes", salesItems)}
         {renderGroup("Sistema", systemItems)}
